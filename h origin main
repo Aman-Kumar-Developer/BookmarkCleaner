@@ -1,0 +1,11 @@
+*   [33m8ff8f25[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m Merge branch 'master'with main Because we had two branches now 1
+[31m|[m[32m\[m  
+[31m|[m * [33m04e1ca4[m[33m ([m[1;32mmaster[m[33m)[m Here we have mapped a model (object) BookmarkFile This one is going to be the main object that Jackson parses that Jason into Inside that object are going to be other object consisting of root And inside this are going to be other objects that we have already created like objects of BookmarkNode like synced , other , bookmark_bar
+* [32m|[m [33mdb5226f[m[33m ([m[1;31morigin/main[m[33m)[m Revise README for project name and content clarity
+* [32m|[m [33m42de12c[m minor changes
+* [32m|[m [33m417127d[m added readme.md
+* [32m|[m [33m3805a9c[m Initial commit
+ [32m/[m  
+[32m|[m * [33mf5d4826[m[33m ([m[1;31morigin/master[m[33m)[m Here we have mapped a model (object) BookmarkFile This one is going to be the main object that Jackson parses that Jason into Inside that object are going to be other object consisting of root And inside this are going to be other objects that we have already created like objects of BookmarkNode like synced , other , bookmark_bar
+[32m|[m[32m/[m  
+* [33m74f0f92[m Initiation of this project by creating the mandatory and necessary  Packages and creating a data entity model of Bookmark node
