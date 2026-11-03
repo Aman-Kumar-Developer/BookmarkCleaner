@@ -1,0 +1,41 @@
+{
+  "checksum": "00000000000000000000000000000000",
+  "roots": {
+    "bookmark_bar": {
+      "children": [
+        {
+          "children": [],
+          "date_added": "13318239010000000",
+          "id": "10",
+          "name": "Empty Folder Alpha",
+          "type": "folder"
+        },
+        {
+          "children": [
+            {
+              "children": [],
+              "date_added": "13318239011000000",
+              "id": "12",
+              "name": "Empty Nested Folder Beta",
+              "type": "folder"
+            }
+          ],
+          "date_added": "13318239010500000",
+          "id": "11",
+          "name": "Folder With Only Empty Child",
+          "type": "folder"
+        }
+      ],
+      "id": "1",
+      "name": "Bookmarks bar",
+      "type": "folder"
+    },
+    "other": {
+      "children": [],
+      "id": "2",
+      "name": "Other bookmarks",
+      "type": "folder"
+    }
+  },
+  "version": 1
+}

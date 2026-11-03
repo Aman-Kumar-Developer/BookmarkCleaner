@@ -1,0 +1,8 @@
+{
+  "title": "Random document without roots",
+  "users": [
+    { "id": 1, "name": "Alice" },
+    { "id": 2, "name": "Bob" }
+  ],
+  "version": 1
+}

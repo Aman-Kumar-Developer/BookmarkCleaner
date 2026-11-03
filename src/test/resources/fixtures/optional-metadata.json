@@ -1,0 +1,33 @@
+{
+  "checksum": "1234567890abcdef1234567890abcdef",
+  "roots": {
+    "bookmark_bar": {
+      "children": [
+        {
+          "date_added": "13318239012345678",
+          "date_last_used": "13318239099999999",
+          "date_modified": "13318239088888888",
+          "guid": "5c9b68e7-91f8-4e5a-96da-72a392bb1cf2",
+          "id": "50",
+          "meta_info": {
+            "last_visited_desktop": "true",
+            "power_bookmark_meta": "xyz123"
+          },
+          "name": "Metadata Rich Bookmark",
+          "type": "url",
+          "url": "https://rich.example.com"
+        },
+        {
+          "id": "51",
+          "name": "Minimal Bookmark Without Dates",
+          "type": "url",
+          "url": "https://minimal.example.com"
+        }
+      ],
+      "id": "1",
+      "name": "Bookmarks bar",
+      "type": "folder"
+    }
+  },
+  "version": 1
+}

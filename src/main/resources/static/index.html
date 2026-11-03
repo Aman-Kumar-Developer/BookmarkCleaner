@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Local, non-destructive Chromium browser bookmark cleaner. Identify broken links, redirects, and duplicates, and export a cleaned bookmark file.">
+  <title>Bookmark Cleaner — Local Chromium Bookmark Manager</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+
+    <!-- Application Header -->
+    <header class="app-header">
+      <div class="container header-content">
+        <div class="brand">
+          <div class="brand-icon" aria-hidden="true">★</div>
+          <div>
+            <h1 class="brand-title">
+              Bookmark Cleaner
+              <span class="brand-badge">Local-First</span>
+            </h1>
+            <p class="brand-tagline">Clean broken links, outdated redirects &amp; duplicates safely</p>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <div id="session-info-pill" class="session-info" style="display: none;">
+            <span class="session-info-dot" aria-hidden="true"></span>
+            <span id="session-filename-display">bookmarks.json</span>
+          </div>
+          <button id="btn-reset-session" class="btn btn-secondary btn-sm" style="display: none;" title="Start over with another file">
+            ↺ Start Over
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="app-main">
+      <div class="container">
+
+        <!-- 1. UPLOAD VIEW -->
+        <section id="view-upload" class="view-section active" aria-labelledby="upload-heading">
+          <div class="hero-box">
+            <h2 id="upload-heading" class="hero-title">Clean your browser bookmarks</h2>
+            <p class="hero-subtitle">
+              Find broken links, outdated redirects, and duplicate bookmarks. Review every proposed modification before exporting a pristine, Chromium-compatible bookmark JSON file.
+            </p>
+
+            <!-- Section A: Import Directly from Browser -->
+            <div class="browser-discovery-section" id="browser-discovery-section">
+              <div class="section-title-wrapper">
+                <h3 class="section-subtitle">Import directly from your browser</h3>
+                <p class="section-description">
+                  We found the following browsers on your device. Choose a browser and profile to import your bookmarks.
+                </p>
+              </div>
+
+              <!-- Loading State -->
+              <div id="browser-discovery-loading" class="discovery-loading-state" style="display: flex;">
+                <div class="spinner-sm" aria-hidden="true"></div>
+                <span>Detecting installed browsers and profiles...</span>
+              </div>
+
+              <!-- Discovery Error Banner -->
+              <div id="browser-discovery-error" class="discovery-alert alert-warning" style="display: none;">
+                <div class="alert-content">
+                  <span class="alert-icon" aria-hidden="true">⚠️</span>
+                  <span id="browser-discovery-error-msg">Could not detect browsers automatically. You can retry or upload a file manually below.</span>
+                </div>
+                <button type="button" id="btn-retry-discovery" class="btn btn-secondary btn-xs">
+                  ↺ Retry Detection
+                </button>
+              </div>
+
+              <!-- No Browsers Detected Banner -->
+              <div id="browser-discovery-empty" class="discovery-alert alert-info" style="display: none;">
+                <div class="alert-content">
+                  <span class="alert-icon" aria-hidden="true">ℹ️</span>
+                  <span>No supported browsers were detected on this device.</span>
+                </div>
+              </div>
+
+              <!-- Discovered Browser Cards Grid -->
+              <div id="browser-cards-grid" class="browser-cards-grid" style="display: none;">
+                <!-- Dynamically populated cards for Chrome, Edge, Brave -->
+              </div>
+            </div>
+
+            <!-- Visual Divider -->
+            <div class="import-divider" role="separator" aria-label="Or choose manual file upload">
+              <span class="import-divider-line"></span>
+              <span class="import-divider-text">OR UPLOAD A BOOKMARK FILE MANUALLY</span>
+              <span class="import-divider-line"></span>
+            </div>
+
+            <!-- Section B: Manual Drag & Drop Zone -->
+            <div id="upload-dropzone" class="dropzone" role="button" tabindex="0" aria-label="Drop bookmark JSON file here or click to select">
+              <input type="file" id="file-input" class="file-input-hidden" accept=".json,application/json" aria-hidden="true">
+              <div class="dropzone-icon" aria-hidden="true">📂</div>
+              <p class="dropzone-prompt">Choose bookmark file or drag &amp; drop it here</p>
+              <p class="dropzone-subtext">Supports Chromium JSON format (Chrome, Edge, Brave)</p>
+              <button type="button" id="btn-browse-file" class="btn btn-primary btn-sm" style="margin-top: 8px;">
+                Browse Files
+              </button>
+            </div>
+
+            <!-- Selected File Card (shown after file is chosen) -->
+            <div id="selected-file-card" class="file-selected-card" style="display: none;">
+              <div class="file-info">
+                <span class="file-icon" aria-hidden="true">📄</span>
+                <div>
+                  <div id="selected-file-name" class="file-name">Bookmarks</div>
+                  <div id="selected-file-meta" class="file-meta">Size: 0 KB</div>
+                </div>
+              </div>
+              <button id="btn-start-upload" class="btn btn-primary">
+                Upload &amp; Analyze
+              </button>
+            </div>
+
+            <!-- Supported Browsers Footnote -->
+            <div class="supported-browsers-list">
+              <span class="supported-browser-item">🌐 Google Chrome</span>
+              <span class="supported-browser-item">🔷 Microsoft Edge</span>
+              <span class="supported-browser-item">🦁 Brave Browser</span>
+              <span class="supported-browser-item">🔒 100% Local &amp; Non-Destructive</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. SCAN PROGRESS VIEW -->
+        <section id="view-scan" class="view-section" aria-labelledby="scan-heading">
+          <div class="scan-progress-box">
+            <div class="scan-status-header">
+              <h2 id="scan-heading" class="hero-title" style="font-size: 1.25rem; margin: 0;">Analyzing Bookmarks</h2>
+              <span id="scan-status-badge" class="scan-status-pill running">RUNNING</span>
+            </div>
+            <p id="scan-status-desc" class="hero-subtitle" style="font-size: 0.95rem; margin-bottom: 1rem;">
+              Validating URLs, inspecting redirects, and grouping duplicate bookmarks...
+            </p>
+
+            <!-- Progress Bar -->
+            <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress-bar-track">
+              <div id="progress-bar-fill" class="progress-fill"></div>
+            </div>
+
+            <!-- Metrics -->
+            <div class="progress-metrics">
+              <span id="scan-progress-count">Processed 0 of 0 bookmarks</span>
+              <span id="scan-progress-percent">0%</span>
+            </div>
+
+            <!-- Error Notification within scan box if failed -->
+            <div id="scan-error-box" style="display: none; margin-top: 1.5rem; text-align: left;" class="toast toast-error">
+              <span id="scan-error-message">Scan encountered an error.</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. RESULTS & DASHBOARD VIEW -->
+        <section id="view-results" class="view-section" aria-labelledby="results-heading">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+            <div>
+              <h2 id="results-heading" style="font-size: 1.5rem; font-weight: 700; color: var(--color-text-main);">
+                Analysis Results &amp; Comparison
+              </h2>
+              <p style="font-size: 0.875rem; color: var(--color-text-muted);">
+                Review each proposed action. Toggle changes ON to apply them, or OFF to retain original bookmarks.
+              </p>
+            </div>
+          </div>
+
+          <!-- Summary Statistic Cards Row -->
+          <div class="stats-grid" role="region" aria-label="Summary Statistics">
+            <div class="stat-card">
+              <span class="stat-label">Total Analyzed</span>
+              <span id="stat-total" class="stat-value">0</span>
+            </div>
+            <div class="stat-card stat-high">
+              <span class="stat-label">High Priority</span>
+              <span id="stat-high" class="stat-value" style="color: var(--color-danger);">0</span>
+            </div>
+            <div class="stat-card stat-medium">
+              <span class="stat-label">Medium Priority</span>
+              <span id="stat-medium" class="stat-value" style="color: var(--color-warning);">0</span>
+            </div>
+            <div class="stat-card stat-low">
+              <span class="stat-label">Low Priority</span>
+              <span id="stat-low" class="stat-value" style="color: var(--color-neutral);">0</span>
+            </div>
+            <div class="stat-card stat-high">
+              <span class="stat-label">Broken Links</span>
+              <span id="stat-broken" class="stat-value" style="color: var(--color-danger);">0</span>
+            </div>
+            <div class="stat-card stat-medium">
+              <span class="stat-label">Redirects</span>
+              <span id="stat-redirected" class="stat-value" style="color: var(--color-info-text);">0</span>
+            </div>
+            <div class="stat-card stat-medium">
+              <span class="stat-label">Duplicates</span>
+              <span id="stat-duplicate" class="stat-value" style="color: var(--color-warning);">0</span>
+            </div>
+            <div class="stat-card stat-applied">
+              <span class="stat-label">Changes Enabled</span>
+              <span id="stat-applied" class="stat-value" style="color: var(--color-primary);">0</span>
+            </div>
+          </div>
+
+          <!-- Results Toolbar (Filter, Search, Item Count) -->
+          <div class="results-toolbar">
+            <div class="filter-group" role="tablist" aria-label="Priority Filter">
+              <button class="filter-btn active" data-priority="ALL" role="tab" aria-selected="true">
+                All <span id="badge-all-count" class="filter-badge">0</span>
+              </button>
+              <button class="filter-btn" data-priority="HIGH" role="tab" aria-selected="false">
+                High Priority <span id="badge-high-count" class="filter-badge">0</span>
+              </button>
+              <button class="filter-btn" data-priority="MEDIUM" role="tab" aria-selected="false">
+                Medium Priority <span id="badge-medium-count" class="filter-badge">0</span>
+              </button>
+              <button class="filter-btn" data-priority="LOW" role="tab" aria-selected="false">
+                Low Priority <span id="badge-low-count" class="filter-badge">0</span>
+              </button>
+            </div>
+
+            <div class="search-box">
+              <span class="search-icon" aria-hidden="true">🔍</span>
+              <input type="text" id="search-input" class="search-input" placeholder="Search by name, URL, or folder..." aria-label="Search comparison items">
+              <button type="button" id="search-clear-btn" class="search-clear-btn" title="Clear search" aria-label="Clear search">✕</button>
+            </div>
+          </div>
+
+          <!-- Comparison Table Wrapper -->
+          <div class="table-wrapper">
+            <table class="comparison-table" aria-label="Bookmark Comparison Table">
+              <thead>
+                <tr>
+                  <th scope="col" class="col-priority">Priority</th>
+                  <th scope="col" class="col-bookmark">Bookmark &amp; Folder</th>
+                  <th scope="col" class="col-url">Original URL</th>
+                  <th scope="col" class="col-change">Proposed Change</th>
+                  <th scope="col" class="col-action">Action</th>
+                  <th scope="col" class="col-decision">Decision</th>
+                </tr>
+              </thead>
+              <tbody id="comparison-table-body">
+                <!-- Dynamically populated via results.js -->
+              </tbody>
+            </table>
+
+            <!-- Empty State within Table -->
+            <div id="table-empty-state" class="empty-state" style="display: none;">
+              <div class="empty-icon" aria-hidden="true">📋</div>
+              <h3 class="empty-title">No matching bookmarks found</h3>
+              <p class="empty-subtext">Try selecting a different priority filter or clearing your search query.</p>
+            </div>
+          </div>
+
+          <!-- Pagination Bar -->
+          <div class="pagination-bar">
+            <div id="pagination-summary" class="pagination-info">
+              Showing 0–0 of 0 items
+            </div>
+            <div class="pagination-controls">
+              <button id="btn-prev-page" class="btn btn-secondary btn-sm" disabled aria-label="Previous page">
+                ← Previous
+              </button>
+              <span id="pagination-page-indicator" style="font-size: 0.875rem; font-weight: 500;">Page 1 of 1</span>
+              <button id="btn-next-page" class="btn btn-secondary btn-sm" disabled aria-label="Next page">
+                Next →
+              </button>
+              <select id="page-size-select" class="btn btn-secondary btn-sm" style="padding: 0.25rem 0.5rem; margin-left: 0.5rem;" aria-label="Select items per page">
+                <option value="25">25 per page</option>
+                <option value="50" selected>50 per page</option>
+                <option value="100">100 per page</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Export Section Card -->
+          <div class="export-card" role="region" aria-labelledby="export-card-heading">
+            <div class="export-details">
+              <h3 id="export-card-heading" class="export-title">Export Cleaned Bookmarks</h3>
+              <p class="export-desc">
+                Generate a separate, cleaned Chromium-compatible JSON file. Only accepted changes (<span style="font-weight: 600; color: var(--color-primary);">ON</span>) will be applied. Your original browser bookmarks and profiles are never modified.
+              </p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <button id="btn-generate-export" class="btn btn-primary btn-lg">
+                Generate Cleaned Bookmarks
+              </button>
+              <button id="btn-download-export" class="btn btn-outline btn-lg" style="display: none;">
+                ⬇ Download JSON
+              </button>
+            </div>
+          </div>
+
+          <!-- Post-Export Instructions Box -->
+          <div id="export-instructions" class="export-instructions-box" role="status">
+            <h4 style="font-weight: 600; margin-bottom: 4px;">Cleaned bookmarks generated successfully!</h4>
+            <p>To use your cleaned bookmarks:</p>
+            <ol class="export-instructions-list">
+              <li>Click <strong>Download JSON</strong> to save <code>bookmarks-cleaned.json</code> to your computer.</li>
+              <li>Open your browser (Chrome, Edge, or Brave) and navigate to the Bookmark Manager (<code>Ctrl+Shift+O</code> or <code>Cmd+Option+B</code>).</li>
+              <li>Export a backup copy of your current bookmarks just in case.</li>
+              <li>Import your new <code>bookmarks-cleaned.json</code> file into your browser.</li>
+            </ol>
+          </div>
+
+        </section>
+
+      </div>
+    </main>
+
+    <!-- Application Footer -->
+    <footer class="app-footer">
+      <div class="container footer-content">
+        <div>
+          <span>Bookmark Cleaner</span> &mdash; Local-first Chromium bookmark manager.
+        </div>
+        <div class="footer-privacy-badge">
+          <span>🔒 Runs entirely on your local machine &bull; No cloud tracking</span>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  </div>
+
+  <!-- Vanilla JavaScript Modules -->
+  <script src="js/state.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/upload.js"></script>
+  <script src="js/scan.js"></script>
+  <script src="js/decisions.js"></script>
+  <script src="js/results.js"></script>
+  <script src="js/export.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

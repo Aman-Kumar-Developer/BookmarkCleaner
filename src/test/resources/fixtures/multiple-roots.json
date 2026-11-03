@@ -1,0 +1,58 @@
+{
+  "checksum": "fedcba9876543210fedcba9876543210",
+  "roots": {
+    "bookmark_bar": {
+      "children": [
+        {
+          "id": "100",
+          "name": "Bar Item",
+          "type": "url",
+          "url": "https://bar.example.com"
+        }
+      ],
+      "id": "1",
+      "name": "Bookmarks bar",
+      "type": "folder"
+    },
+    "other": {
+      "children": [
+        {
+          "id": "200",
+          "name": "Other Item",
+          "type": "url",
+          "url": "https://other.example.com"
+        }
+      ],
+      "id": "2",
+      "name": "Other bookmarks",
+      "type": "folder"
+    },
+    "synced": {
+      "children": [
+        {
+          "id": "300",
+          "name": "Mobile Item",
+          "type": "url",
+          "url": "https://mobile.example.com"
+        }
+      ],
+      "id": "3",
+      "name": "Mobile bookmarks",
+      "type": "folder"
+    },
+    "custom_root": {
+      "children": [
+        {
+          "id": "400",
+          "name": "Custom Root Item",
+          "type": "url",
+          "url": "https://custom.example.com"
+        }
+      ],
+      "id": "4",
+      "name": "Custom Archive Root",
+      "type": "folder"
+    }
+  },
+  "version": 1
+}

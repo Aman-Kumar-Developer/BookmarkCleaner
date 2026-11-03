@@ -1,0 +1,64 @@
+{
+  "checksum": "a1b2c3d4e5f60718293a4b5c6d7e8f90",
+  "roots": {
+    "bookmark_bar": {
+      "children": [
+        {
+          "date_added": "13318239010000000",
+          "id": "10",
+          "name": "Dev Resources",
+          "type": "folder",
+          "children": [
+            {
+              "date_added": "13318239011000000",
+              "id": "11",
+              "name": "Documentation",
+              "type": "folder",
+              "children": [
+                {
+                  "date_added": "13318239012000000",
+                  "id": "12",
+                  "name": "Java Docs",
+                  "type": "url",
+                  "url": "https://docs.oracle.com/en/java/"
+                },
+                {
+                  "date_added": "13318239013000000",
+                  "id": "13",
+                  "name": "Deep Dive",
+                  "type": "folder",
+                  "children": [
+                    {
+                      "date_added": "13318239014000000",
+                      "id": "14",
+                      "name": "JVM Specification",
+                      "type": "url",
+                      "url": "https://docs.oracle.com/javase/specs/jvms/se21/html/"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "date_added": "13318239015000000",
+              "id": "15",
+              "name": "Direct Link in Dev Resources",
+              "type": "url",
+              "url": "https://developer.mozilla.org"
+            }
+          ]
+        }
+      ],
+      "id": "1",
+      "name": "Bookmarks bar",
+      "type": "folder"
+    },
+    "other": {
+      "children": [],
+      "id": "2",
+      "name": "Other bookmarks",
+      "type": "folder"
+    }
+  },
+  "version": 1
+}

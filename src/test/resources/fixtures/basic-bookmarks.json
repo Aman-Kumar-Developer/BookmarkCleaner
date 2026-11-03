@@ -1,0 +1,52 @@
+{
+  "checksum": "d41d8cd98f00b204e9800998ecf8427e",
+  "roots": {
+    "bookmark_bar": {
+      "children": [
+        {
+          "date_added": "13318239012345678",
+          "id": "101",
+          "name": "GitHub",
+          "type": "url",
+          "url": "https://github.com"
+        },
+        {
+          "date_added": "13318239012345679",
+          "id": "102",
+          "name": "Spring Framework",
+          "type": "url",
+          "url": "https://spring.io"
+        },
+        {
+          "date_added": "13318239012345680",
+          "id": "103",
+          "name": "Brave Browser",
+          "type": "url",
+          "url": "https://brave.com"
+        }
+      ],
+      "date_added": "13318239000000000",
+      "date_modified": "13318239012345680",
+      "id": "1",
+      "name": "Bookmarks bar",
+      "type": "folder"
+    },
+    "other": {
+      "children": [],
+      "date_added": "13318239000000001",
+      "date_modified": "0",
+      "id": "2",
+      "name": "Other bookmarks",
+      "type": "folder"
+    },
+    "synced": {
+      "children": [],
+      "date_added": "13318239000000002",
+      "date_modified": "0",
+      "id": "3",
+      "name": "Mobile bookmarks",
+      "type": "folder"
+    }
+  },
+  "version": 1
+}

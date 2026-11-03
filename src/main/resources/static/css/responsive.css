@@ -1,0 +1,101 @@
+/* ==========================================================================
+   Bookmark Cleaner - Responsive Media Queries
+   ========================================================================== */
+
+/* Tablet & Smaller Desktops (<= 1024px) */
+@media (max-width: 1024px) {
+  .container {
+    padding: 0 var(--space-4);
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .col-bookmark { width: 20%; }
+  .col-url { width: 24%; }
+  .col-change { width: 26%; }
+
+  .export-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* Mobile Devices (<= 768px) */
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .hero-box {
+    padding: var(--space-8) var(--space-4);
+  }
+
+  .hero-title {
+    font-size: var(--font-size-2xl);
+  }
+
+  .hero-subtitle {
+    font-size: var(--font-size-base);
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .results-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-group {
+    overflow-x: auto;
+    padding-bottom: var(--space-1);
+  }
+
+  .search-box {
+    width: 100%;
+    min-width: unset;
+  }
+
+  /* Controlled Horizontal Scroll for Table */
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .comparison-table {
+    min-width: 720px;
+  }
+
+  .pagination-bar {
+    flex-direction: column;
+    gap: var(--space-3);
+    align-items: center;
+  }
+
+  .footer-content {
+    flex-direction: column;
+    gap: var(--space-3);
+    text-align: center;
+  }
+
+  .toast-container {
+    left: var(--space-4);
+    right: var(--space-4);
+    bottom: var(--space-4);
+  }
+
+  .toast {
+    min-width: unset;
+    width: 100%;
+  }
+}

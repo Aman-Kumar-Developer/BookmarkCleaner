@@ -1,0 +1,27 @@
+{
+  "checksum": "abcdefabcdefabcdefabcdefabcdefab",
+  "sync_metadata": {
+    "server_defined_unique_tag": "tag-999"
+  },
+  "custom_app_flag": "chromium-cleaner-source",
+  "roots": {
+    "bookmark_bar": {
+      "children": [
+        {
+          "id": "70",
+          "name": "Custom Property Bookmark",
+          "type": "url",
+          "url": "https://custom-fields.example.com",
+          "custom_tag": "reading-list",
+          "is_pinned": true,
+          "custom_ranking_score": 98.5
+        }
+      ],
+      "id": "1",
+      "name": "Bookmarks bar",
+      "type": "folder",
+      "folder_theme_color": "#FF5733"
+    }
+  },
+  "version": 1
+}
