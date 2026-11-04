@@ -98,4 +98,38 @@ class FrontendStaticResourcesTest {
                 .andExpect(content().string(containsString("createBrowserCard")))
                 .andExpect(content().string(containsString("btn-import-profile")));
     }
+
+    @Test
+    @DisplayName("Verify UX improvements: Decision controls and expandable details assets")
+    void testDecisionControlsAndExpandableRowsStaticAssets() throws Exception {
+        mockMvc.perform(get("/index.html"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("col-expand")))
+                .andExpect(content().string(containsString("col-decision")))
+                .andExpect(content().string(containsString("col-change")));
+
+        mockMvc.perform(get("/css/components.css"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString(".btn-row-expand")))
+                .andExpect(content().string(containsString(".expand-chevron")))
+                .andExpect(content().string(containsString(".compact-change-wrapper")))
+                .andExpect(content().string(containsString(".decision-control-wrapper")))
+                .andExpect(content().string(containsString(".decision-label")))
+                .andExpect(content().string(containsString(".details-card")))
+                .andExpect(content().string(containsString(".details-grid")));
+
+        mockMvc.perform(get("/js/results.js"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("createTableRowGroup")))
+                .andExpect(content().string(containsString("getCompactSummary")))
+                .andExpect(content().string(containsString("formatShortUrl")))
+                .andExpect(content().string(containsString("btn-row-expand")))
+                .andExpect(content().string(containsString("details-card")));
+
+        mockMvc.perform(get("/js/decisions.js"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("updateDecisionUi")))
+                .andExpect(content().string(containsString("toggleDecision")))
+                .andExpect(content().string(containsString("isDecisionPending")));
+    }
 }

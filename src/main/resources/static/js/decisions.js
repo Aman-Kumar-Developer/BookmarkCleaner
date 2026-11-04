@@ -5,6 +5,23 @@
   'use strict';
 
   /**
+   * Updates visible decision label and expanded status indicator.
+   * @param {string} itemId
+   * @param {boolean} enabled
+   */
+  function updateDecisionUi(itemId, enabled) {
+    const labelEl = document.getElementById(`decision-label-${itemId}`);
+    if (labelEl) {
+      labelEl.textContent = enabled ? 'Apply' : 'Keep Original';
+      labelEl.className = `decision-label ${enabled ? 'applied' : 'kept'}`;
+    }
+    const detailsStatusEl = document.getElementById(`details-decision-status-${itemId}`);
+    if (detailsStatusEl) {
+      detailsStatusEl.innerHTML = `Current choice: <strong class="${enabled ? 'text-primary' : 'text-muted'}">${enabled ? 'Apply Proposed Change' : 'Keep Original Bookmark'}</strong>`;
+    }
+  }
+
+  /**
    * Dispatches a decision update to the backend with locking and rollback.
    * @param {string} itemId
    * @param {boolean} newEnabledState
@@ -35,10 +52,11 @@
     const previousState = currentItem.enabled;
     const switchContainer = checkboxEl.closest('.switch');
 
-    // Lock toggle in UI
+    // Optimistically update label and lock toggle in UI
     window.BookmarkCleaner.State.addPendingDecision(itemId);
     checkboxEl.disabled = true;
     if (switchContainer) switchContainer.classList.add('pending');
+    updateDecisionUi(itemId, newEnabledState);
 
     try {
       const response = await window.BookmarkCleaner.Api.updateDecision(scanId, itemId, newEnabledState);
@@ -57,6 +75,7 @@
       }
 
       checkboxEl.checked = response.enabled;
+      updateDecisionUi(itemId, response.enabled);
 
       const actionText = response.enabled ? 'applied' : 'reverted';
       window.BookmarkCleaner.App.showToast(`Change ${actionText} for "${currentItem.bookmarkName}"`, 'info');
@@ -66,6 +85,7 @@
       // Rollback to previous state
       checkboxEl.checked = previousState;
       currentItem.enabled = previousState;
+      updateDecisionUi(itemId, previousState);
 
       window.BookmarkCleaner.App.showToast(`Failed to update decision: ${err.message}`, 'error');
     } finally {
@@ -77,7 +97,8 @@
 
   window.BookmarkCleaner = window.BookmarkCleaner || {};
   window.BookmarkCleaner.Decisions = {
-    toggleDecision: toggleDecision
+    toggleDecision: toggleDecision,
+    updateDecisionUi: updateDecisionUi
   };
 
 })(window);

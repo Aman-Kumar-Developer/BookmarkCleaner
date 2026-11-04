@@ -13,8 +13,9 @@
   }
 
   .col-bookmark { width: 20%; }
-  .col-url { width: 24%; }
-  .col-change { width: 26%; }
+  .col-url { width: 20%; }
+  .col-change { width: 28%; }
+  .col-decision { width: 135px; }
 
   .export-card {
     flex-direction: column;
@@ -73,7 +74,15 @@
   }
 
   .comparison-table {
-    min-width: 720px;
+    min-width: 820px;
+  }
+
+  .details-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .details-card {
+    padding: var(--space-3) var(--space-4);
   }
 
   .pagination-bar {
