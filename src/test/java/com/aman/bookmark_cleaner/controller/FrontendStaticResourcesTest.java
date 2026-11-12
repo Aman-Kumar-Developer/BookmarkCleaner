@@ -132,4 +132,33 @@ class FrontendStaticResourcesTest {
                 .andExpect(content().string(containsString("toggleDecision")))
                 .andExpect(content().string(containsString("isDecisionPending")));
     }
+
+    @Test
+    @DisplayName("Verify Direct Browser Replacement and Versioned Restore Points assets in frontend")
+    void testDirectBrowserReplacementAndVersionsAssets() throws Exception {
+        mockMvc.perform(get("/index.html"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("browser-replacement-card")))
+                .andExpect(content().string(containsString("btn-replace-browser")))
+                .andExpect(content().string(containsString("installation-status-panel")))
+                .andExpect(content().string(containsString("previous-versions-card")))
+                .andExpect(content().string(containsString("btn-restore-version-1")))
+                .andExpect(content().string(containsString("btn-restore-version-2")))
+                .andExpect(content().string(containsString("modal-replace-confirmation")))
+                .andExpect(content().string(containsString("modal-restore-confirmation")));
+
+        mockMvc.perform(get("/css/components.css"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString(".browser-replacement-card")))
+                .andExpect(content().string(containsString(".previous-versions-card")))
+                .andExpect(content().string(containsString(".operation-status-panel")))
+                .andExpect(content().string(containsString(".versions-grid")))
+                .andExpect(content().string(containsString(".version-card")));
+
+        mockMvc.perform(get("/js/export.js"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("loadPreviousVersions")))
+                .andExpect(content().string(containsString("startStatusPolling")))
+                .andExpect(content().string(containsString("renderOperationStatus")));
+    }
 }

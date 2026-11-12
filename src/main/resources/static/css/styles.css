@@ -119,7 +119,10 @@ html {
 
 body {
   font-family: var(--font-sans);
-  background-color: var(--color-bg);
+  background:
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.08), transparent 24%),
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.06), transparent 26%),
+    var(--color-bg);
   color: var(--color-text-main);
   line-height: var(--line-height-normal);
   min-height: 100vh;
@@ -261,6 +264,21 @@ input, select, textarea {
 .app-main {
   flex: 1;
   padding: var(--space-8) 0;
+}
+
+.app-wrapper {
+  position: relative;
+}
+
+.app-wrapper::before {
+  content: "";
+  position: fixed;
+  inset: 0 auto auto 0;
+  width: 100%;
+  height: 220px;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.05), transparent);
+  z-index: -1;
 }
 
 /* Section Containers */

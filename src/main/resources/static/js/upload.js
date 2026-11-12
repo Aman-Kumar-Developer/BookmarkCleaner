@@ -199,7 +199,12 @@
         scanId: uploadResult.scanId,
         filename: uploadResult.filename,
         totalBookmarks: uploadResult.totalBookmarks,
-        scanStatus: 'PENDING'
+        scanStatus: 'PENDING',
+        importedFromBrowser: true,
+        browserId: uploadResult.browserId || browserId,
+        browserName: uploadResult.browserName || browserId,
+        profileId: uploadResult.profileId || profileId,
+        profileName: uploadResult.profileName || profileName
       });
 
       window.BookmarkCleaner.App.showToast(`Imported ${uploadResult.totalBookmarks} bookmarks from ${uploadResult.filename}`, 'success');

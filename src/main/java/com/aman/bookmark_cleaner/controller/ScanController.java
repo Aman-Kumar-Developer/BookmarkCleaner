@@ -1,12 +1,17 @@
 package com.aman.bookmark_cleaner.controller;
 
+import com.aman.bookmark_cleaner.dto.BackupManagementResponse;
 import com.aman.bookmark_cleaner.dto.ComparisonResultsPageResponse;
 import com.aman.bookmark_cleaner.dto.DecisionUpdateRequest;
 import com.aman.bookmark_cleaner.dto.DecisionUpdateResponse;
 import com.aman.bookmark_cleaner.dto.ExportResponse;
+import com.aman.bookmark_cleaner.dto.InstallResponse;
+import com.aman.bookmark_cleaner.dto.InstallationOperationDto;
+import com.aman.bookmark_cleaner.dto.RestoreResponse;
 import com.aman.bookmark_cleaner.dto.ScanStatusResponse;
 import com.aman.bookmark_cleaner.dto.StartScanRequest;
 import com.aman.bookmark_cleaner.service.BookmarkExportService;
+import com.aman.bookmark_cleaner.service.BrowserBookmarkInstallationService;
 import com.aman.bookmark_cleaner.service.DecisionService;
 import com.aman.bookmark_cleaner.service.ScanOrchestrationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,14 +38,17 @@ public class ScanController {
     private final ScanOrchestrationService orchestrationService;
     private final DecisionService decisionService;
     private final BookmarkExportService exportService;
+    private final BrowserBookmarkInstallationService installationService;
 
     @Autowired
     public ScanController(ScanOrchestrationService orchestrationService,
                           DecisionService decisionService,
-                          BookmarkExportService exportService) {
+                          BookmarkExportService exportService,
+                          BrowserBookmarkInstallationService installationService) {
         this.orchestrationService = orchestrationService;
         this.decisionService = decisionService;
         this.exportService = exportService;
+        this.installationService = installationService;
     }
 
     /**
@@ -118,5 +126,52 @@ public class ScanController {
                 .contentType(MediaType.APPLICATION_JSON)
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"bookmarks-cleaned.json\"")
                 .body(exportBytes);
+    }
+
+    /**
+     * Inspects available versioned backups and browser status for the scan's imported profile.
+     */
+    @GetMapping("/{scanId}/backups")
+    public ResponseEntity<BackupManagementResponse> getBackups(@PathVariable("scanId") String scanId) {
+        BackupManagementResponse response = installationService.getBackupManagementInfo(scanId);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Replaces bookmarks directly in the original browser profile with versioned backups.
+     */
+    @PostMapping("/{scanId}/install")
+    public ResponseEntity<InstallResponse> installCleanedBookmarks(@PathVariable("scanId") String scanId) {
+        InstallResponse response = installationService.installCleanedBookmarks(scanId);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Retrieves current installation operation status (including waiting-for-closure state).
+     */
+    @GetMapping("/{scanId}/install/status")
+    public ResponseEntity<InstallationOperationDto> getInstallationStatus(@PathVariable("scanId") String scanId) {
+        InstallationOperationDto response = installationService.getInstallationStatus(scanId);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Cancels a pending installation operation currently waiting for browser closure.
+     */
+    @PostMapping("/{scanId}/install/cancel")
+    public ResponseEntity<InstallationOperationDto> cancelInstallation(@PathVariable("scanId") String scanId) {
+        InstallationOperationDto response = installationService.cancelInstallation(scanId);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Restores a previously created versioned backup into the active Bookmarks file.
+     */
+    @PostMapping("/{scanId}/backups/{backupId}/restore")
+    public ResponseEntity<RestoreResponse> restoreBackup(
+            @PathVariable("scanId") String scanId,
+            @PathVariable("backupId") String backupId) {
+        RestoreResponse response = installationService.restoreBackup(scanId, backupId);
+        return ResponseEntity.ok(response);
     }
 }

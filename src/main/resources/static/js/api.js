@@ -166,6 +166,72 @@
         }
       );
       return handleResponse(response);
+    },
+
+    /**
+     * Retrieves versioned backup status and browser profile metadata for a scan.
+     * @param {string} scanId
+     * @returns {Promise<Object>} BackupManagementResponse
+     */
+    async getBackups(scanId) {
+      const response = await fetch(
+        `${BASE_URL}/api/scans/${encodeURIComponent(scanId)}/backups`,
+        { method: 'GET' }
+      );
+      return handleResponse(response);
+    },
+
+    /**
+     * Directly replaces bookmarks in the original browser profile with versioned backups.
+     * @param {string} scanId
+     * @returns {Promise<Object>} InstallResponse
+     */
+    async installBookmarks(scanId) {
+      const response = await fetch(
+        `${BASE_URL}/api/scans/${encodeURIComponent(scanId)}/install`,
+        { method: 'POST' }
+      );
+      return handleResponse(response);
+    },
+
+    /**
+     * Retrieves the status of any active or recent installation/restore operation.
+     * @param {string} scanId
+     * @returns {Promise<Object>} InstallationOperationDto
+     */
+    async getInstallStatus(scanId) {
+      const response = await fetch(
+        `${BASE_URL}/api/scans/${encodeURIComponent(scanId)}/install/status`,
+        { method: 'GET' }
+      );
+      return handleResponse(response);
+    },
+
+    /**
+     * Cancels an installation operation waiting for browser closure.
+     * @param {string} scanId
+     * @returns {Promise<Object>} InstallationOperationDto
+     */
+    async cancelInstall(scanId) {
+      const response = await fetch(
+        `${BASE_URL}/api/scans/${encodeURIComponent(scanId)}/install/cancel`,
+        { method: 'POST' }
+      );
+      return handleResponse(response);
+    },
+
+    /**
+     * Restores a previously created versioned backup into the active Bookmarks file.
+     * @param {string} scanId
+     * @param {string} backupId
+     * @returns {Promise<Object>} RestoreResponse
+     */
+    async restoreBackup(scanId, backupId) {
+      const response = await fetch(
+        `${BASE_URL}/api/scans/${encodeURIComponent(scanId)}/backups/${encodeURIComponent(backupId)}/restore`,
+        { method: 'POST' }
+      );
+      return handleResponse(response);
     }
   };
 

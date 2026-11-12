@@ -151,6 +151,7 @@
             <!-- Metrics -->
             <div class="progress-metrics">
               <span id="scan-progress-count">Processed 0 of 0 bookmarks</span>
+              <span id="scan-progress-remaining">Remaining: 0</span>
               <span id="scan-progress-percent">0%</span>
             </div>
 
@@ -289,13 +290,47 @@
                 Generate a separate, cleaned Chromium-compatible JSON file. Only accepted changes (<span style="font-weight: 600; color: var(--color-primary);">ON</span>) will be applied. Your original browser bookmarks and profiles are never modified.
               </p>
             </div>
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
               <button id="btn-generate-export" class="btn btn-primary btn-lg">
                 Generate Cleaned Bookmarks
               </button>
               <button id="btn-download-export" class="btn btn-outline btn-lg" style="display: none;">
                 ⬇ Download JSON
               </button>
+            </div>
+          </div>
+
+          <!-- Browser Profile Direct Replacement Card -->
+          <div id="browser-replacement-card" class="browser-replacement-card" style="display: none;" role="region" aria-labelledby="browser-replace-heading">
+            <div class="browser-replacement-header">
+              <div class="browser-provenance-info">
+                <div class="provenance-browser-icon" aria-hidden="true">🌐</div>
+                <div>
+                  <h3 id="browser-replace-heading" class="browser-replacement-title">Direct Browser Replacement</h3>
+                  <p class="browser-replacement-subtitle">
+                    Target Browser: <span id="provenance-browser-badge" class="provenance-badge">Browser</span> &bull; Profile: <strong id="provenance-profile-name">Default</strong>
+                  </p>
+                </div>
+              </div>
+              <div class="browser-replacement-actions">
+                <button id="btn-replace-browser" class="btn btn-primary btn-lg">
+                  ⚡ Replace Bookmarks in Browser
+                </button>
+              </div>
+            </div>
+
+            <!-- Asynchronous Operation Live Status Panel -->
+            <div id="installation-status-panel" class="operation-status-panel" style="display: none;" role="status">
+              <div id="status-panel-icon" class="status-panel-icon">⏳</div>
+              <div class="status-panel-content">
+                <h4 id="status-panel-heading" class="status-panel-heading">Waiting for Browser to Close</h4>
+                <p id="status-panel-text" class="status-panel-text">
+                  Please close your browser completely. Bookmark Cleaner will automatically install your cleaned bookmarks.
+                </p>
+                <div id="status-panel-actions" class="status-panel-actions" style="display: none;">
+                  <button id="btn-cancel-operation" class="btn btn-secondary btn-sm">Cancel Operation</button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -309,6 +344,70 @@
               <li>Export a backup copy of your current bookmarks just in case.</li>
               <li>Import your new <code>bookmarks-cleaned.json</code> file into your browser.</li>
             </ol>
+          </div>
+
+          <!-- Previous Versions & Restore Points Card -->
+          <div id="previous-versions-card" class="previous-versions-card" style="display: none;" role="region" aria-labelledby="previous-versions-heading">
+            <div class="versions-card-header">
+              <div>
+                <h3 id="previous-versions-heading" class="versions-card-title">🛡️ Bookmark Version History</h3>
+                <p id="versions-card-subtitle" class="versions-card-subtitle">
+                  Browser: <span id="versions-browser-badge" class="provenance-badge">Browser</span> &bull; Profile: <strong id="versions-profile-name">Default</strong>
+                </p>
+              </div>
+              <button id="btn-refresh-versions" class="btn btn-secondary btn-sm" title="Refresh available backups">
+                ↻ Refresh Versions
+              </button>
+            </div>
+
+            <!-- Active Bookmark File Status -->
+            <div id="active-version-bar" class="active-version-bar">
+              <div>
+                Active Version: <strong>Bookmarks</strong> &bull; <span id="active-version-stats">Inspecting...</span>
+              </div>
+              <span id="active-browser-status" class="provenance-badge">Current</span>
+            </div>
+
+            <!-- Two Version Slots Grid -->
+            <div id="versions-container" class="versions-grid">
+              <!-- Version 1: Most Recent Backup -->
+              <div id="version-1-card" class="version-card">
+                <div class="version-card-header">
+                  <div>
+                    <div class="version-label">Previous Version 1 (Most Recent)</div>
+                    <p class="version-card-desc">Most recent backup</p>
+                  </div>
+                  <span class="version-file-code">Bookmarks.old.1</span>
+                </div>
+                <div id="version-1-meta" class="version-meta">
+                  <span>Inspecting backup...</span>
+                </div>
+                <div class="version-card-actions">
+                  <button id="btn-restore-version-1" class="btn btn-secondary btn-sm" disabled>
+                    ↩ Restore Version 1
+                  </button>
+                </div>
+              </div>
+
+              <!-- Version 2: Older Backup -->
+              <div id="version-2-card" class="version-card empty-slot">
+                <div class="version-card-header">
+                  <div>
+                    <div class="version-label">Previous Version 2 (Older Backup)</div>
+                    <p class="version-card-desc">Older backup</p>
+                  </div>
+                  <span class="version-file-code">Bookmarks.old.2</span>
+                </div>
+                <div id="version-2-meta" class="version-meta">
+                  <p class="version-empty-text">No second backup created yet. A second generation will be preserved on your next replacement or restore.</p>
+                </div>
+                <div class="version-card-actions">
+                  <button id="btn-restore-version-2" class="btn btn-secondary btn-sm" disabled>
+                    ↩ Restore Version 2
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
         </section>
@@ -330,6 +429,124 @@
 
     <!-- Toast Notification Container -->
     <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- Direct Replacement Confirmation Modal -->
+    <div id="modal-replace-confirmation" class="modal-overlay" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="modal-replace-title" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <div>
+            <h3 id="modal-replace-title" class="modal-title">⚡ Replace Bookmarks in Browser</h3>
+            <p style="font-size: var(--font-size-xs); color: var(--color-text-subtle); margin: 2px 0 0 0;">Install your cleaned bookmarks directly into the selected browser profile.</p>
+          </div>
+          <button id="btn-modal-replace-close" class="modal-close-btn" aria-label="Close dialog">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="confirmation-info-grid">
+            <div class="info-item">
+              <span class="info-label">Target Browser</span>
+              <span id="modal-replace-browser-name" class="info-value info-value--primary">-</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Target Profile</span>
+              <span id="modal-replace-profile-name" class="info-value">-</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Cleaned Bookmarks</span>
+              <span id="modal-replace-count" class="info-value">-</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Modifications Applied</span>
+              <span id="modal-replace-changes" class="info-value info-value--primary">-</span>
+            </div>
+          </div>
+
+          <div class="modal-notice-box modal-notice-box--neutral">
+            <span style="font-size: 1.125rem;">🛡️</span>
+            <div>
+              <strong style="display: block; margin-bottom: 2px;">Automatic 2-Generation Backup Retention</strong>
+              <span>Two previous versions will be retained automatically. Active bookmarks are safely backed up to <code>Bookmarks.old.1</code>, and existing backups rotate to <code>Bookmarks.old.2</code>.</span>
+            </div>
+          </div>
+
+          <div class="modal-notice-box modal-notice-box--warning">
+            <span style="font-size: 1.125rem;">⏳</span>
+            <div>
+              <strong style="display: block; margin-bottom: 2px;">Next Step: Close <span id="modal-replace-alert-browser-name">the target browser</span> completely</strong>
+              <span>After confirmation, close the target browser completely. Bookmark Cleaner will wait for the browser to exit and complete the replacement in the background. You can reopen Bookmark Cleaner afterward to check the result.</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-modal-replace-cancel" class="btn btn-secondary">Cancel</button>
+          <button id="btn-modal-replace-confirm" class="btn btn-primary">
+            Confirm &amp; Schedule Replacement
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Restore Backup Confirmation Modal -->
+    <div id="modal-restore-confirmation" class="modal-overlay" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="modal-restore-title" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <div>
+            <h3 id="modal-restore-title" class="modal-title">🛡️ Restore Bookmarks from Backup</h3>
+            <p style="font-size: var(--font-size-xs); color: var(--color-text-subtle); margin: 2px 0 0 0;">Restore a previous bookmark generation into your browser profile.</p>
+          </div>
+          <button id="btn-modal-restore-close" class="modal-close-btn" aria-label="Close dialog">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="confirmation-info-grid">
+            <div class="info-item">
+              <span class="info-label">Target Browser</span>
+              <span id="modal-restore-browser-name" class="info-value info-value--primary">-</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Target Profile</span>
+              <span id="modal-restore-profile-name" class="info-value">-</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Selected Backup</span>
+              <span id="modal-restore-version-title" class="info-value">-</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Backup Filename</span>
+              <span class="info-value"><code id="modal-restore-filename">Bookmarks.old.1</code></span>
+            </div>
+            <div class="info-item" style="grid-column: 1 / -1;">
+              <span class="info-label">Backup Details</span>
+              <span id="modal-restore-stats" class="info-value" style="font-weight: 500; font-size: var(--font-size-xs);">-</span>
+            </div>
+            <div class="info-item" style="grid-column: 1 / -1;">
+              <span class="info-label">Validation Status</span>
+              <span id="modal-restore-validation" class="info-value">-</span>
+            </div>
+          </div>
+
+          <div class="modal-notice-box modal-notice-box--neutral">
+            <span style="font-size: 1.125rem;">🛡️</span>
+            <div>
+              <strong style="display: block; margin-bottom: 2px;">Preserve Active Bookmarks</strong>
+              <span>Your currently active bookmarks will be preserved into a backup before restoration, ensuring no loss of current state.</span>
+            </div>
+          </div>
+
+          <div class="modal-notice-box modal-notice-box--warning">
+            <span style="font-size: 1.125rem;">⚠️</span>
+            <div>
+              <strong style="display: block; margin-bottom: 2px;">Ensure <span id="modal-restore-alert-browser-name">the browser</span> is closed</strong>
+              <span>The restore operation requires the browser application to be closed so changes take effect without lock collision.</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-modal-restore-cancel" class="btn btn-secondary">Cancel</button>
+          <button id="btn-modal-restore-confirm" class="btn btn-primary">
+            Confirm &amp; Restore
+          </button>
+        </div>
+      </div>
+    </div>
 
   </div>
 

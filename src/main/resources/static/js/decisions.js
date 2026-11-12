@@ -72,6 +72,10 @@
         if (statAppliedEl) {
           statAppliedEl.textContent = state.summary.actionsAppliedCount;
         }
+        window.BookmarkCleaner.State.setState({ changesAppliedCount: state.summary.actionsAppliedCount });
+        if (window.BookmarkCleaner.Export && window.BookmarkCleaner.Export.updateProvenanceUI) {
+          window.BookmarkCleaner.Export.updateProvenanceUI();
+        }
       }
 
       checkboxEl.checked = response.enabled;

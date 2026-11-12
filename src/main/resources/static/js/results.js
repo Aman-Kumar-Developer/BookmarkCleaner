@@ -124,12 +124,17 @@
         summary: response.summary,
         totalItems: response.totalItems,
         totalPages: Math.max(1, response.totalPages),
-        currentPage: response.page
+        currentPage: response.page,
+        changesAppliedCount: (response.summary && response.summary.actionsAppliedCount) || 0
       });
 
       renderSummary(response.summary);
       renderTable(response.items || []);
       renderPagination(response);
+
+      if (window.BookmarkCleaner.Export && window.BookmarkCleaner.Export.updateProvenanceUI) {
+        window.BookmarkCleaner.Export.updateProvenanceUI();
+      }
 
     } catch (err) {
       console.error('Failed to load results:', err);

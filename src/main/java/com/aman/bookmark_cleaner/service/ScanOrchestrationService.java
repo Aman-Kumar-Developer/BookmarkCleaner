@@ -15,6 +15,9 @@ import com.aman.bookmark_cleaner.model.ScanSession;
 import com.aman.bookmark_cleaner.model.ScanStatus;
 import com.aman.bookmark_cleaner.model.ValidationOutcome;
 import com.aman.bookmark_cleaner.parser.BookmarkReader;
+import jakarta.annotation.PreDestroy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,6 +28,9 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -32,22 +38,38 @@ import java.util.stream.Collectors;
  * and session state.
  */
 @Service
-public class ScanOrchestrationService {
+public class ScanOrchestrationService implements AutoCloseable {
+
+    private static final Logger log = LoggerFactory.getLogger(ScanOrchestrationService.class);
 
     private final BookmarkReader bookmarkReader;
     private final BookmarkProcessingEngine processingEngine;
     private final ComparisonService comparisonService;
     private final ScanSessionManager sessionManager;
+    private final ExecutorService scanExecutor;
 
     @Autowired
     public ScanOrchestrationService(BookmarkReader bookmarkReader,
                                     BookmarkProcessingEngine processingEngine,
                                     ComparisonService comparisonService,
                                     ScanSessionManager sessionManager) {
+        this(bookmarkReader, processingEngine, comparisonService, sessionManager, null);
+    }
+
+    public ScanOrchestrationService(BookmarkReader bookmarkReader,
+                                    BookmarkProcessingEngine processingEngine,
+                                    ComparisonService comparisonService,
+                                    ScanSessionManager sessionManager,
+                                    ExecutorService customExecutor) {
         this.bookmarkReader = bookmarkReader;
         this.processingEngine = processingEngine;
         this.comparisonService = comparisonService;
         this.sessionManager = sessionManager;
+        this.scanExecutor = customExecutor != null ? customExecutor : Executors.newCachedThreadPool(r -> {
+            Thread t = new Thread(r, "bookmark-scan-orchestrator");
+            t.setDaemon(true);
+            return t;
+        });
     }
 
     /**
@@ -91,26 +113,45 @@ public class ScanOrchestrationService {
     public ScanStatusResponse startScan(String scanId) {
         ScanSession session = sessionManager.getSession(scanId);
 
-        try {
-            session.setStatus(ScanStatus.RUNNING);
-            session.setProgressPercentage(10);
+        // If already RUNNING or COMPLETED, return current state
+        if (session.getStatus() == ScanStatus.RUNNING || session.getStatus() == ScanStatus.COMPLETED) {
+            return getScanStatus(scanId);
+        }
 
-            // Execute Stage 2 processing engine
-            BookmarkAnalysisReport report = processingEngine.analyze(session.getOriginalDocument());
-            session.setAnalysisReport(report);
-            session.setProgressPercentage(75);
+        // Initialize state for running scan
+        session.setStatus(ScanStatus.RUNNING);
+        session.setProgressPercentage(0);
+        session.setErrorMessage(null);
 
-            // Build comparison items with priority and proposed actions
-            List<ComparisonItem> items = comparisonService.buildComparisonItems(report);
-            session.setComparisonItems(items);
-            session.setProcessedBookmarks(items.size());
-
+        int total = session.getTotalBookmarks();
+        if (total == 0) {
             session.setProgressPercentage(100);
             session.setStatus(ScanStatus.COMPLETED);
-        } catch (Exception e) {
-            session.setStatus(ScanStatus.FAILED);
-            session.setErrorMessage(e.getMessage());
+            return getScanStatus(scanId);
         }
+
+        scanExecutor.submit(() -> {
+            try {
+                // Execute Stage 2 processing engine with progress listener
+                BookmarkAnalysisReport report = processingEngine.analyze(
+                        session.getOriginalDocument(),
+                        (item, completed, totalCount) -> session.recordBookmarkCompleted(item, completed, totalCount)
+                );
+                session.setAnalysisReport(report);
+
+                // Build comparison items with priority and proposed actions (final aggregation stage)
+                List<ComparisonItem> items = comparisonService.buildComparisonItems(report);
+                session.setComparisonItems(items);
+                session.setProcessedBookmarks(session.getTotalBookmarks());
+
+                session.setProgressPercentage(100);
+                session.setStatus(ScanStatus.COMPLETED);
+            } catch (Exception e) {
+                log.error("Scan analysis failed for scanId: {}", scanId, e);
+                session.setStatus(ScanStatus.FAILED);
+                session.setErrorMessage(e.getMessage() != null ? e.getMessage() : "Scan failed during analysis");
+            }
+        });
 
         return getScanStatus(scanId);
     }
@@ -122,24 +163,37 @@ public class ScanOrchestrationService {
         ScanSession session = sessionManager.getSession(scanId);
         BookmarkAnalysisReport report = session.getAnalysisReport();
 
-        long working = report != null ? report.getCount(ValidationOutcome.WORKING) : 0;
-        long broken = report != null ? report.getCount(ValidationOutcome.BROKEN) : 0;
-        long redirected = report != null ? report.getCount(ValidationOutcome.REDIRECTED) : 0;
-        long duplicate = report != null ? (report.getExactDuplicateCount() + report.getPotentialDuplicateCount()) : 0;
-        long unknown = report != null ? report.getCount(ValidationOutcome.UNKNOWN) : 0;
+        long working = report != null ? report.getCount(ValidationOutcome.WORKING) : session.getWorkingCount();
+        long broken = report != null ? report.getCount(ValidationOutcome.BROKEN) : session.getBrokenCount();
+        long redirected = report != null ? report.getCount(ValidationOutcome.REDIRECTED) : session.getRedirectedCount();
+        long duplicate = report != null ? (report.getExactDuplicateCount() + report.getPotentialDuplicateCount()) : session.getDuplicateCount();
+        long unknown = report != null ? report.getCount(ValidationOutcome.UNKNOWN) : session.getUnknownCount();
+
+        int total = session.getTotalBookmarks();
+        int completed = session.getCompletedBookmarks();
+        int pending = session.getPendingBookmarks();
+        int failed = session.getFailedBookmarks();
 
         return new ScanStatusResponse(
                 session.getScanId(),
                 session.getStatus().name(),
                 session.getProgressPercentage(),
-                session.getTotalBookmarks(),
+                total,
                 session.getProcessedBookmarks(),
+                completed,
+                pending,
+                failed,
                 working,
                 broken,
                 redirected,
                 duplicate,
                 unknown,
-                session.getErrorMessage()
+                session.getErrorMessage(),
+                session.isImportedFromBrowser(),
+                session.getBrowserType() != null ? session.getBrowserType().getId() : null,
+                session.getBrowserType() != null ? session.getBrowserType().getDisplayName() : null,
+                session.getProfileId(),
+                session.getProfileName()
         );
     }
 
@@ -207,5 +261,21 @@ public class ScanOrchestrationService {
         long unknown = report != null ? report.getCount(ValidationOutcome.UNKNOWN) : 0;
 
         return new SummaryCountsDto(total, high, med, low, working, broken, redirected, duplicate, unknown, applied);
+    }
+
+    @Override
+    @PreDestroy
+    public void close() {
+        if (scanExecutor != null && !scanExecutor.isShutdown()) {
+            scanExecutor.shutdown();
+            try {
+                if (!scanExecutor.awaitTermination(2, TimeUnit.SECONDS)) {
+                    scanExecutor.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                scanExecutor.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 }

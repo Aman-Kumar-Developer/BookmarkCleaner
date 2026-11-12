@@ -4,9 +4,15 @@
 (function(window) {
   'use strict';
 
+  const STORAGE_KEY_SCAN_ID = 'bookmark_cleaner_active_scan_id';
+  let savedScanId = null;
+  try {
+    savedScanId = localStorage.getItem(STORAGE_KEY_SCAN_ID);
+  } catch (_) {}
+
   const initialState = {
     // Current Scan Session
-    scanId: null,
+    scanId: savedScanId || null,
     filename: null,
     totalBookmarks: 0,
     scanStatus: 'IDLE', // 'IDLE', 'PENDING', 'RUNNING', 'COMPLETED', 'FAILED'
@@ -30,6 +36,14 @@
     exportReady: false,
     exportData: null,
 
+    // Browser Profile Provenance
+    importedFromBrowser: false,
+    browserId: null,
+    browserName: null,
+    profileId: null,
+    profileName: null,
+    changesAppliedCount: 0,
+
     // Pending Decision Network Updates (Set of itemIds)
     pendingDecisions: new Set()
   };
@@ -51,6 +65,15 @@
      */
     setState(partialState) {
       state = { ...state, ...partialState };
+      if (partialState && 'scanId' in partialState) {
+        try {
+          if (partialState.scanId) {
+            localStorage.setItem(STORAGE_KEY_SCAN_ID, partialState.scanId);
+          } else {
+            localStorage.removeItem(STORAGE_KEY_SCAN_ID);
+          }
+        } catch (_) {}
+      }
       this.notify();
     },
 
@@ -88,7 +111,10 @@
      * Resets application state back to initial.
      */
     reset() {
-      state = { ...initialState, pendingDecisions: new Set() };
+      try {
+        localStorage.removeItem(STORAGE_KEY_SCAN_ID);
+      } catch (_) {}
+      state = { ...initialState, scanId: null, pendingDecisions: new Set() };
       this.notify();
     },
 

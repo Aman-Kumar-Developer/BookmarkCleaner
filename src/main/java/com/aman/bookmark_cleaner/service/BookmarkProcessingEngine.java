@@ -77,6 +77,18 @@ public class BookmarkProcessingEngine implements AutoCloseable {
      * The input document is never mutated.
      */
     public BookmarkAnalysisReport analyze(BookmarkDocument document) {
+        return analyze(document, null);
+    }
+
+    /**
+     * Executes the complete processing and analysis pipeline on a {@link BookmarkDocument}
+     * with incremental progress reporting.
+     *
+     * @param document the bookmark document to analyze
+     * @param progressListener callback listener invoked as bookmarks complete processing
+     * @return the aggregated bookmark analysis report
+     */
+    public BookmarkAnalysisReport analyze(BookmarkDocument document, BookmarkProgressListener progressListener) {
         if (document == null || document.getRoots() == null) {
             return new BookmarkAnalysisReport(Collections.emptyList(), Collections.emptyList(), 0);
         }
@@ -100,6 +112,14 @@ public class BookmarkProcessingEngine implements AutoCloseable {
 
         // 2. Perform duplicate detection
         List<DuplicateGroup> duplicateGroups = duplicateDetectionService.findDuplicatesInList(allBookmarks);
+
+        if (progressListener != null) {
+            long totalDups = duplicateGroups.stream().mapToLong(g -> g.getRemovalCandidates().size()).sum();
+            try {
+                progressListener.onDuplicatesDetected((int) totalDups);
+            } catch (Exception ignored) {
+            }
+        }
 
         // Build lookup maps for duplicate assignments
         Map<String, String> itemToGroupId = new HashMap<>();
@@ -132,6 +152,8 @@ public class BookmarkProcessingEngine implements AutoCloseable {
         ConcurrentHashMap<String, Semaphore> hostSemaphores = new ConcurrentHashMap<>();
 
         int perHostLimit = Math.max(1, properties.getMaxConcurrentRequestsPerHost());
+        int totalBookmarks = allBookmarks.size();
+        AtomicInteger completedCount = new AtomicInteger(0);
 
         // Schedule validation futures
         List<CompletableFuture<BookmarkAnalysisItem>> itemFutures = new ArrayList<>();
@@ -145,23 +167,38 @@ public class BookmarkProcessingEngine implements AutoCloseable {
                     key -> CompletableFuture.supplyAsync(() -> validateWithHostThrottling(rawUrl, hostSemaphores, perHostLimit), executor)
             );
 
-            CompletableFuture<BookmarkAnalysisItem> itemFuture = valFuture.thenApply(validationResult -> {
-                String bId = bookmark.getBookmarkId();
-                String dupGid = itemToGroupId.get(bId);
-                DuplicateType dupType = itemToDuplicateType.get(bId);
-                boolean retained = itemToRetained.getOrDefault(bId, true); // Unique items default to retained
+            CompletableFuture<BookmarkAnalysisItem> itemFuture = valFuture
+                    .handle((validationResult, throwable) -> {
+                        ValidationResult effectiveResult = validationResult;
+                        if (throwable != null || effectiveResult == null) {
+                            String msg = throwable != null ? throwable.getMessage() : "Unknown validation failure";
+                            effectiveResult = ValidationResult.unknown(rawUrl, -1, msg, 0);
+                        }
+                        String bId = bookmark.getBookmarkId();
+                        String dupGid = itemToGroupId.get(bId);
+                        DuplicateType dupType = itemToDuplicateType.get(bId);
+                        boolean retained = itemToRetained.getOrDefault(bId, true); // Unique items default to retained
 
-                return new BookmarkAnalysisItem(
-                        bId,
-                        bookmark.getBookmarkName(),
-                        rawUrl,
-                        bookmark.getFolderPath(),
-                        validationResult,
-                        dupGid,
-                        dupType,
-                        retained
-                );
-            });
+                        return new BookmarkAnalysisItem(
+                                bId,
+                                bookmark.getBookmarkName(),
+                                rawUrl,
+                                bookmark.getFolderPath(),
+                                effectiveResult,
+                                dupGid,
+                                dupType,
+                                retained
+                        );
+                    })
+                    .whenComplete((item, ex) -> {
+                        int completed = completedCount.incrementAndGet();
+                        if (progressListener != null) {
+                            try {
+                                progressListener.onBookmarkCompleted(item, completed, totalBookmarks);
+                            } catch (Exception ignored) {
+                            }
+                        }
+                    });
 
             itemFutures.add(itemFuture);
         }

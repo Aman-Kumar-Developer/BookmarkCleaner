@@ -1,10 +1,14 @@
 package com.aman.bookmark_cleaner.controller;
 
 import com.aman.bookmark_cleaner.dto.ErrorResponse;
+import com.aman.bookmark_cleaner.exception.BackupNotFoundException;
+import com.aman.bookmark_cleaner.exception.BookmarkFileModifiedException;
 import com.aman.bookmark_cleaner.exception.BookmarkFileNotFoundException;
+import com.aman.bookmark_cleaner.exception.BookmarkInstallationException;
 import com.aman.bookmark_cleaner.exception.BookmarkReaderException;
 import com.aman.bookmark_cleaner.exception.BrowserNotFoundException;
 import com.aman.bookmark_cleaner.exception.BrowserProfileNotFoundException;
+import com.aman.bookmark_cleaner.exception.BrowserRunningException;
 import com.aman.bookmark_cleaner.exception.ComparisonItemNotFoundException;
 import com.aman.bookmark_cleaner.exception.ExportException;
 import com.aman.bookmark_cleaner.exception.InvalidBookmarkException;
@@ -41,10 +45,28 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
-    @ExceptionHandler(BookmarkFileNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleFileNotFound(BookmarkFileNotFoundException ex, HttpServletRequest request) {
+    @ExceptionHandler({BookmarkFileNotFoundException.class, BackupNotFoundException.class})
+    public ResponseEntity<ErrorResponse> handleFileNotFound(Exception ex, HttpServletRequest request) {
         ErrorResponse error = new ErrorResponse(HttpStatus.NOT_FOUND.value(), "File Not Found", ex.getMessage(), request.getRequestURI());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(BrowserRunningException.class)
+    public ResponseEntity<ErrorResponse> handleBrowserRunning(BrowserRunningException ex, HttpServletRequest request) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.CONFLICT.value(), "Browser Is Running", ex.getMessage(), request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
+    @ExceptionHandler(BookmarkFileModifiedException.class)
+    public ResponseEntity<ErrorResponse> handleBookmarkFileModified(BookmarkFileModifiedException ex, HttpServletRequest request) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.CONFLICT.value(), "Bookmark File Modified", ex.getMessage(), request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
+    @ExceptionHandler(BookmarkInstallationException.class)
+    public ResponseEntity<ErrorResponse> handleInstallationException(BookmarkInstallationException ex, HttpServletRequest request) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Installation Failed", ex.getMessage(), request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
 
     @ExceptionHandler({InvalidBookmarkException.class, InvalidDecisionException.class, IllegalArgumentException.class, SecurityValidationException.class, BookmarkReaderException.class})

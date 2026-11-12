@@ -47,7 +47,14 @@ public class BookmarkExportService {
             int totalExported = reconstructedDoc.getTotalBookmarkCount();
             String downloadUrl = "/api/scans/" + scanId + "/export";
 
-            return new ExportResponse(scanId, session.getExportFilename(), totalExported, changesApplied, downloadUrl);
+            boolean importedFromBrowser = session.isImportedFromBrowser();
+            String browserId = session.getBrowserType() != null ? session.getBrowserType().getId() : null;
+            String browserName = session.getBrowserType() != null ? session.getBrowserType().getDisplayName() : null;
+            String profileId = session.getProfileId();
+            String profileName = session.getProfileDisplayName();
+
+            return new ExportResponse(scanId, session.getExportFilename(), totalExported, changesApplied, downloadUrl,
+                    importedFromBrowser, browserId, browserName, profileId, profileName);
         } catch (Exception e) {
             throw new ExportException("Failed to generate export JSON for scan '" + scanId + "': " + e.getMessage(), e);
         }

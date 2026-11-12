@@ -146,16 +146,23 @@ class ScanApiControllerTest {
                         .content("{\"scanId\":\"" + scanId + "\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.scanId").value(scanId))
-                .andExpect(jsonPath("$.status").value("COMPLETED"))
-                .andExpect(jsonPath("$.totalBookmarks").value(2))
-                .andExpect(jsonPath("$.brokenCount").value(1))
-                .andExpect(jsonPath("$.workingCount").value(1));
+                .andExpect(jsonPath("$.status").value("RUNNING"))
+                .andExpect(jsonPath("$.totalBookmarks").value(2));
 
-        // 4. Get scan status
+        // 4. Wait for background analysis to complete and get scan status
+        ScanSession session = sessionManager.getSession(scanId);
+        long deadline = System.currentTimeMillis() + 5000;
+        while (session.getStatus() == ScanStatus.RUNNING && System.currentTimeMillis() < deadline) {
+            Thread.sleep(20);
+        }
+
         mockMvc.perform(get("/api/scans/" + scanId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("COMPLETED"))
                 .andExpect(jsonPath("$.totalBookmarks").value(2))
+                .andExpect(jsonPath("$.completedBookmarks").value(2))
+                .andExpect(jsonPath("$.pendingBookmarks").value(0))
+                .andExpect(jsonPath("$.progressPercentage").value(100))
                 .andExpect(jsonPath("$.brokenCount").value(1))
                 .andExpect(jsonPath("$.workingCount").value(1));
 

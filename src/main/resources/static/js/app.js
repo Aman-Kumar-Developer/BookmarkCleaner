@@ -125,6 +125,50 @@
       }
     });
 
+    // 4. Reconnect to active session on browser reopen or page refresh
+    const savedScanId = window.BookmarkCleaner.State.getState().scanId;
+    if (savedScanId) {
+      window.BookmarkCleaner.Api.getScanStatus(savedScanId).then(statusData => {
+        if (statusData && statusData.status) {
+          const stateUpdate = {
+            scanId: savedScanId,
+            scanStatus: statusData.status,
+            totalBookmarks: statusData.totalBookmarks,
+            summary: statusData
+          };
+
+          if (statusData.importedFromBrowser) {
+            stateUpdate.importedFromBrowser = true;
+            if (statusData.browserId) stateUpdate.browserId = statusData.browserId;
+            if (statusData.browserName) stateUpdate.browserName = statusData.browserName;
+            if (statusData.profileId) stateUpdate.profileId = statusData.profileId;
+            if (statusData.profileName) stateUpdate.profileName = statusData.profileName;
+          }
+
+          window.BookmarkCleaner.State.setState(stateUpdate);
+
+          if (statusData.status === 'COMPLETED') {
+            switchView('view-results');
+            if (window.BookmarkCleaner.Results) {
+              window.BookmarkCleaner.Results.loadResults();
+            }
+            if (window.BookmarkCleaner.Export) {
+              window.BookmarkCleaner.Export.loadPreviousVersions(savedScanId);
+              window.BookmarkCleaner.Export.startStatusPolling(savedScanId);
+            }
+          } else if (statusData.status === 'RUNNING' || statusData.status === 'PENDING') {
+            switchView('view-scan');
+            if (window.BookmarkCleaner.Scan) {
+              window.BookmarkCleaner.Scan.startPolling(savedScanId);
+            }
+          }
+        }
+      }).catch(_ => {
+        // Saved session no longer valid in backend: clean up silently
+        window.BookmarkCleaner.State.reset();
+      });
+    }
+
     console.log('Bookmark Cleaner frontend initialized.');
   }
 

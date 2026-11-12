@@ -25,6 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.security.MessageDigest;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -140,12 +141,16 @@ public class BrowserImportService {
         Path tempSnapshot = null;
         BookmarkDocument document;
         String sessionName = browserType.getDisplayName() + " (" + profile.getDisplayName() + ")";
+        String originalHash;
 
         try {
             tempSnapshot = Files.createTempFile("bookmark-browser-import-", ".json");
             try (InputStream is = Files.newInputStream(bookmarkPath, StandardOpenOption.READ)) {
                 Files.copy(is, tempSnapshot, StandardCopyOption.REPLACE_EXISTING);
             }
+
+            // Compute SHA-256 fingerprint of the imported file snapshot
+            originalHash = computeSha256(tempSnapshot);
 
             // Feed the snapshot into the existing BookmarkReader
             document = bookmarkReader.read(tempSnapshot);
@@ -163,11 +168,30 @@ public class BrowserImportService {
             }
         }
 
-        // 6. Create active scan session in the existing ScanSessionManager
+        // 6. Create active scan session in the existing ScanSessionManager and attach profile origin
         ScanSession session = sessionManager.createSession(sessionName, document);
-        log.info("Successfully imported {} bookmarks from {} for scanId: {}", session.getTotalBookmarks(), sessionName, session.getScanId());
+        session.setImportedFromBrowser(true);
+        session.setBrowserType(browserType);
+        session.setProfileId(profile.getId());
+        session.setProfileDirectoryName(profile.getDirectoryName());
+        session.setProfileDisplayName(profile.getDisplayName());
+        session.setOriginalBookmarkPath(bookmarkPath);
+        session.setOriginalFileHash(originalHash);
 
-        return new UploadResponse(session.getScanId(), sessionName, session.getTotalBookmarks(), session.getStatus().name());
+        log.info("Successfully imported {} bookmarks from {} for scanId: {} (hash: {})",
+                session.getTotalBookmarks(), sessionName, session.getScanId(), originalHash);
+
+        return new UploadResponse(
+                session.getScanId(),
+                sessionName,
+                session.getTotalBookmarks(),
+                session.getStatus().name(),
+                true,
+                browserType.getId(),
+                browserType.getDisplayName(),
+                profile.getId(),
+                profile.getDisplayName()
+        );
     }
 
     /**
@@ -261,6 +285,34 @@ public class BrowserImportService {
             if (!Files.isReadable(bookmarkFile)) {
                 throw new BookmarkReaderException("Bookmark file cannot be read (insufficient permissions) for profile: " + profileId);
             }
+        }
+    }
+
+    /**
+     * Calculates the SHA-256 hexadecimal hash string for a file.
+     *
+     * @param path the path to the file
+     * @return the lowercase 64-character hex string
+     * @throws IOException if reading the file fails
+     */
+    public static String computeSha256(Path path) throws IOException {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            try (InputStream is = Files.newInputStream(path, StandardOpenOption.READ)) {
+                byte[] buffer = new byte[8192];
+                int read;
+                while ((read = is.read(buffer)) != -1) {
+                    digest.update(buffer, 0, read);
+                }
+            }
+            byte[] hashBytes = digest.digest();
+            StringBuilder sb = new StringBuilder(hashBytes.length * 2);
+            for (byte b : hashBytes) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            throw new IOException("Failed to calculate SHA-256 digest: " + e.getMessage(), e);
         }
     }
 }
